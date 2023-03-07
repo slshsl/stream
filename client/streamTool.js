@@ -13,11 +13,14 @@ async function* streamAsyncIterator(stream) {
   }
 }
 
-async function readStream(stream, cal = () => {}) {
+async function readStream(stream, each = () => {}, finish = () => {}) {
+  let chunks = [];
   for await (const chunk of streamAsyncIterator(stream)) {
-    cal(chunk);
+    chunks.push(chunk);
+    each(chunk);
     await sleep(10); // 测试
   }
+  return finish(chunks);
 }
 
 async function sleep(duration) {
@@ -28,14 +31,23 @@ async function sleep(duration) {
   });
 }
 
-function generateReadableStreamFromAnother(stream, cal = () => {}) {
+function generateReadableStreamFromAnother(
+  stream,
+  each = () => {},
+  finish = () => {}
+) {
   return new ReadableStream({
     async start(controller) {
-      await readStream(stream, (chunk) => {
-        controller.enqueue(chunk);
-        cal(chunk);
-      });
-      controller.close();
+      await readStream(
+        stream,
+        (chunk) => {
+          each(chunk, controller);
+        },
+        (chunks) => {
+          finish(chunks, controller);
+          controller.close();
+        }
+      );
     },
   });
 }

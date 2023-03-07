@@ -18,19 +18,23 @@ btnEle3.addEventListener("click", async () => {
   // 根据原来的流重新构建个流
   const stream = response.body;
 
-  const newStream = generateReadableStreamFromAnother(stream, (chunk) => {
-    progress += chunk.length;
-    if (progress === total) {
-      console.log(`Downloaded ${total}`);
-    } else {
-      const tip = `Downloaded ${progress} of ${total} (${(
-        (progress / total) *
-        100
-      ).toFixed(2)}%)`;
-      console.log(tip);
-      progress3.textContent = tip;
+  const newStream = generateReadableStreamFromAnother(
+    stream,
+    (chunk, controller) => {
+      controller.enqueue(chunk);
+      progress += chunk.length;
+      if (progress === total) {
+        console.log(`Downloaded ${total}`);
+      } else {
+        const tip = `Downloaded ${progress} of ${total} (${(
+          (progress / total) *
+          100
+        ).toFixed(2)}%)`;
+        console.log(tip);
+        progress3.textContent = tip;
+      }
     }
-  });
+  );
 
   //然后再重新构建个响应返回
   const newResponse = generateReponseFromAnother(response, newStream);
